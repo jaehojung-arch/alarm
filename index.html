@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="예룸학교종">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#3a80cc">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>예룸학교종 v1.0</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif; -webkit-tap-highlight-color: transparent; }
+body { background: #0e0e1c; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; min-height: -webkit-fill-available; padding: 10px; padding-top: env(safe-area-inset-top, 10px); }
+.app { background: #16162a; border: 2px solid #444; border-radius: 10px; padding: 12px; width: 100%; max-width: 560px; }
+.user-label { color: #888; font-size: 11px; margin-bottom: 5px; }
+.title-bar { background: #12283d; border: 2px solid #3a80cc; border-radius: 8px; padding: 9px 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.title-bar h1 { color: #7ecfff; font-size: 18px; font-style: italic; font-weight: 700; }
+.title-bar .ver { color: #6688aa; font-size: 11px; }
+.title-bar .clock { color: #ffdd44; font-size: 15px; font-family: monospace; font-weight: 700; margin-left: auto; letter-spacing: 1px; }
+.next-alarm { color: #4dbb7a; font-size: 11px; margin-bottom: 5px; text-align: right; }
+.fire-banner { display: none; background: #6a0f0f; border: 2px solid #ff3333; color: #ffbbbb; padding: 7px 12px; border-radius: 6px; text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.fire-banner.show { display: block; animation: blink 0.7s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.35} }
+.main { display: flex; gap: 8px; }
+.tbl-wrap { flex: 1; overflow-y: auto; max-height: 60vh; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+thead th { background: #22224a; color: #99aacc; padding: 5px 3px; border: 1px solid #333; text-align: center; position: sticky; top: 0; z-index: 1; font-size: 11px; }
+tbody tr { cursor: pointer; }
+tbody tr.sel td { background: #183060 !important; }
+tbody tr:hover td { background: #20203c; }
+tbody td { padding: 3px 3px; border: 1px solid #252535; text-align: center; background: #18182e; }
+td.num { color: #555; width: 22px; font-size: 11px; }
+td.time { width: 88px; }
+td.time input[type=text] {
+  background: #081828;
+  border: 1px solid #3a78cc;
+  color: #55ccff;
+  width: 80px;
+  padding: 4px 4px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  font-family: monospace;
+  letter-spacing: 2px;
+}
+td.time input[type=text]:focus { outline: none; border-color: #66aaff; background: #0d2540; }
+td select { background: #181830; border: 1px solid #383848; color: #bbccdd; font-size: 10px; padding: 2px 2px; border-radius: 3px; width: 76px; }
+td.cb input { accent-color: #3a90dd; width: 16px; height: 16px; }
+td.uselabel { font-size: 10px; width: 48px; }
+td.uselabel.on { color: #44cc77; }
+td.uselabel.off { color: #444; }
+td.testbtn button { background: #241840; border: 1px solid #5a3a88; color: #aa88ee; padding: 3px 7px; border-radius: 3px; font-size: 11px; cursor: pointer; }
+td.testbtn button:active { background: #301a50; }
+.btns { display: flex; flex-direction: column; gap: 6px; min-width: 80px; }
+.btn { padding: 10px 6px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; border: 2px solid; user-select: none; -webkit-user-select: none; }
+.btn:active { filter: brightness(0.85); }
+.btn-save { background: #174017; border-color: #30993a; color: #66ee66; }
+.btn-quit { background: #501010; border-color: #bb2222; color: #ff8888; }
+.btn-mute { background: #222040; border-color: #444466; color: #aabbcc; font-size: 12px; }
+.btn-mute.active { background: #3a3000; border-color: #bb9900; color: #ffcc00; }
+.msgbar { background: #080810; border: 1px solid #333; border-radius: 5px; padding: 6px 10px; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+.msglbl { color: #44bb66; font-size: 11px; font-weight: 700; border: 1px solid #44bb66; padding: 1px 7px; border-radius: 3px; white-space: nowrap; }
+.msgtext { color: #ffdd44; font-size: 11px; flex: 1; }
+.install-hint { display: none; background: #1a2a1a; border: 1px solid #3a7a3a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; color: #88cc88; font-size: 11px; text-align: center; line-height: 1.6; }
+.install-hint.show { display: block; }
+.install-hint strong { color: #aaeebb; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="user-label">사용자 : (주)포스텍</div>
+  <div class="title-bar">
+    <h1>🔔 예룸학교종</h1>
+    <span class="ver">v1.0</span>
+    <span class="clock" id="clk">00:00:00</span>
+  </div>
+  <div class="install-hint" id="installHint"></div>
+  <div class="next-alarm" id="nxt"></div>
+  <div class="fire-banner" id="banner"></div>
+  <div class="main">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>시간</th>
+            <th>알람설정</th>
+            <th>사용</th>
+            <th></th>
+            <th>듣기</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="btns">
+      <div class="btn btn-save" onclick="save()">✔ 저 장</div>
+      <div class="btn btn-quit" onclick="quit()">🚫 종 료</div>
+      <div class="btn btn-mute" id="muteBtn" onclick="toggleMute()">음악정지</div>
+    </div>
+  </div>
+  <div class="msgbar">
+    <span class="msglbl">[메세지]</span>
+    <span class="msgtext" id="msgEl">프로그램이 시작되었습니다.</span>
+  </div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isAndroid = /android/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+if (!isStandalone) {
+  const hint = document.getElementById('installHint');
+  hint.classList.add('show');
+  if (isIOS) {
+    hint.innerHTML = '📲 홈 화면에 추가하면 앱처럼 사용할 수 있습니다.<br><strong>Safari → 공유버튼(□↑) → 홈 화면에 추가</strong>';
+  } else if (isAndroid) {
+    hint.innerHTML = '📲 홈 화면에 추가하면 앱처럼 사용할 수 있습니다.<br><strong>Chrome → 메뉴(⋮) → 홈 화면에 추가</strong>';
+  }
+}
+
+const CHIMES = ['차임벨01','차임벨02','차임벨03','차임벨04','차임벨05','차임벨06',
+                '차임벨07','차임벨08','차임벨09','차임벨10','차임벨11','차임벨12','차임벨13'];
+
+const DEFAULT = [
+  {t:'09:00',c:'차임벨04',u:true},{t:'09:45',c:'차임벨04',u:true},{t:'09:55',c:'차임벨04',u:true},
+  {t:'10:40',c:'차임벨04',u:true},{t:'10:50',c:'차임벨04',u:true},{t:'11:35',c:'차임벨04',u:true},
+  {t:'11:45',c:'차임벨04',u:true},{t:'12:30',c:'차임벨04',u:true},{t:'13:20',c:'차임벨04',u:true},
+  {t:'14:05',c:'차임벨04',u:true},{t:'14:15',c:'차임벨04',u:true},{t:'15:00',c:'차임벨04',u:true},
+  {t:'15:10',c:'차임벨04',u:true},{t:'15:55',c:'차임벨04',u:true},
+  {t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},
+  {t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},
+  {t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},
+  {t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},
+  {t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},{t:'09:00',c:'차임벨01',u:false},
+  {t:'09:00',c:'차임벨10',u:false}
+];
+
+let alarms = [];
+try { alarms = JSON.parse(localStorage.getItem('yerum_alarms') || 'null') || JSON.parse(JSON.stringify(DEFAULT)); }
+catch(e) { alarms = JSON.parse(JSON.stringify(DEFAULT)); }
+
+let muted = false, running = true, fired = {}, sel = 0, curAudio = null;
+
+function playChime(name) {
+  if (muted) return;
+  try {
+    if (curAudio) { curAudio.pause(); curAudio.currentTime = 0; }
+    curAudio = new Audio('sounds/' + name + '.mp3');
+    curAudio.play().catch(() => msg('소리 파일 없음: ' + name));
+  } catch(e) {}
+}
+function stopSound() {
+  if (curAudio) { curAudio.pause(); curAudio.currentTime = 0; curAudio = null; }
+}
+function validateTime(val) {
+  const m = val.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = parseInt(m[1]), mn = parseInt(m[2]);
+  if (h < 0 || h > 23 || mn < 0 || mn > 59) return null;
+  return h.toString().padStart(2,'0') + ':' + m[2];
+}
+function render() {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  alarms.forEach((a, i) => {
+    const tr = document.createElement('tr');
+    if (i === sel) tr.classList.add('sel');
+    tr.onclick = () => { sel = i; render(); };
+    const opts = CHIMES.map(c => `<option${c===a.c?' selected':''}>${c}</option>`).join('');
+    tr.innerHTML = `
+      <td class="num">${i+1}</td>
+      <td class="time"><input type="text" value="${a.t}" maxlength="5" placeholder="09:00"
+        onchange="const v=validateTime(this.value);if(v){alarms[${i}].t=v;this.value=v;this.style.borderColor='#3a78cc';updateNext();}else{this.style.borderColor='#cc3333';msg('형식 오류: HH:MM');}"
+        onclick="event.stopPropagation()" onfocus="this.select()"></td>
+      <td><select onchange="alarms[${i}].c=this.value" onclick="event.stopPropagation()">${opts}</select></td>
+      <td class="cb"><input type="checkbox" ${a.u?'checked':''} onchange="alarms[${i}].u=this.checked;render()" onclick="event.stopPropagation()"></td>
+      <td class="uselabel ${a.u?'on':'off'}">${a.u?'사용함':'사용안함'}</td>
+      <td class="testbtn"><button onclick="event.stopPropagation();playChime(alarms[${i}].c);msg('▶ '+alarms[${i}].c)">▶</button></td>`;
+    tb.appendChild(tr);
+  });
+  updateNext();
+}
+function updateNext() {
+  const now = new Date(), nm = now.getHours()*60+now.getMinutes();
+  let nxt = null;
+  alarms.forEach(a => {
+    if (!a.u) return;
+    const p = a.t.split(':');
+    if (p.length !== 2) return;
+    const t = parseInt(p[0])*60+parseInt(p[1]);
+    if (t > nm && (!nxt || t < nxt.t)) nxt = {t, time:a.t, chime:a.c};
+  });
+  document.getElementById('nxt').textContent = nxt ? `다음 알람: ${nxt.time} (${nxt.chime})` : '오늘 예정 알람 없음';
+}
+function msg(s) { document.getElementById('msgEl').textContent = s; }
+function save() { localStorage.setItem('yerum_alarms', JSON.stringify(alarms)); fired={}; msg('저장 완료!'); updateNext(); }
+function quit() { running=false; stopSound(); document.getElementById('banner').classList.remove('show'); msg('알람이 종료되었습니다.'); }
+function toggleMute() {
+  muted = !muted;
+  if (muted) stopSound();
+  document.getElementById('muteBtn').textContent = muted ? '음악재생' : '음악정지';
+  document.getElementById('muteBtn').classList.toggle('active', muted);
+  msg(muted ? '음악 정지.' : '음악 재생.');
+}
+function checkAlarms() {
+  if (!running) return;
+  const hhmm = new Date().toTimeString().slice(0,5);
+  alarms.forEach((a, i) => {
+    if (!a.u || a.t !== hhmm) return;
+    const key = i+'-'+hhmm;
+    if (fired[key]) return;
+    fired[key] = true;
+    playChime(a.c);
+    msg('🔔 ' + a.t + ' 알람! (' + a.c + ')');
+    const b = document.getElementById('banner');
+    b.textContent = '🔔 ' + a.t + ' 알람! (' + a.c + ')';
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 8000);
+  });
+}
+function tick() {
+  document.getElementById('clk').textContent = new Date().toTimeString().slice(0,8);
+  checkAlarms();
+}
+render(); tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>
